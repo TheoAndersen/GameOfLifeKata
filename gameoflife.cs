@@ -76,7 +76,17 @@ namespace GameOfLife
 
             public void Tick()
             {
-                livingCells.Clear();
+                List<Cell> dyingCells = new List<Cell>();
+
+                foreach(var livingCell in livingCells)
+                {
+                    if(NeighboursOfCellAt(livingCell.Location) != 2)
+                    {
+                        dyingCells.Add(livingCell);
+                    }
+                }
+                
+                livingCells.RemoveAll(cell => dyingCells.Contains(cell));
             }
 
             public int NeighboursOfCellAt(Location location)
@@ -85,6 +95,16 @@ namespace GameOfLife
 
                 return neighbours.Count();
             }
+        }
+        [Test]
+        public void CellWithTwoNeighboursShouldLiveOnAfterNextTick()
+        {
+            var world = new World();
+            world.SetLiveCellAt(new Location(1, 1));
+            world.SetLiveCellAt(new Location(1, 2));
+            world.SetLiveCellAt(new Location(2, 1));
+            world.Tick();
+            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
         }
 
         [Test]
@@ -98,7 +118,8 @@ namespace GameOfLife
              *  3  x n n n x
              *  4  x x x x x
              */
-              
+
+            var world = new World();
             var location = new Location(2, 2);
             Assert.AreEqual(0, world.NeighboursOfCellAt(location));
             world.SetLiveCellAt(new Location(2, 2));
@@ -131,34 +152,15 @@ namespace GameOfLife
             Assert.AreEqual(8, world.NeighboursOfCellAt(location));
         }
         
-        [Test]
-        [Ignore]
-        public void CellWithTwoNeighboursShouldLiveOnAfterNextTick()
-        {
-            world.SetLiveCellAt(new Location(1, 1));
-            world.SetLiveCellAt(new Location(1, 2));
-            world.SetLiveCellAt(new Location(2, 1));
-            world.Tick();
-            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
-        }
         
         [Test]
         public void OneAliveCellShouldDieAfterATick()
         {
+            var world = new World();
             world.SetLiveCellAt(new Location(1,1));
             Assert.IsAssignableFrom(typeof(AliveCell), world.GetCellAt(new Location(1, 1)), "before tick");
             world.Tick();
             Assert.IsInstanceOfType(typeof(DeadCell), world.GetCellAt(new Location(1, 1)), "after tick");
         }
-
-        World world;
-
-        [TestFixtureSetUp]
-        public void TestInitialize()
-        {
-            world = new World();
-        }
-
-
     }
 }
