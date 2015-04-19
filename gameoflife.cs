@@ -82,16 +82,19 @@ namespace GameOfLife
 
         public class World
         {
-            List<Cell> livingCells = new List<Cell>();
+            IEnumerable<Cell> livingCells = new List<Cell>();
             
             public void SetLiveCellAt(Location location)
             {
-                livingCells.Add(new AliveCell(location));
+                var cells = new List<Cell>();
+                cells.AddRange(livingCells);
+                cells.Add(new AliveCell(location));
+                livingCells = cells;
             }
             
             public Cell GetCellAt(Location location)
             {
-                if(livingCells.Exists(cell => cell.Location.Equals(location)))
+                if(livingCells.Any(cell => cell.Location.Equals(location)))
                 {
                     return new AliveCell(location);
                 }
@@ -115,8 +118,7 @@ namespace GameOfLife
             
             public World Tick()
             {
-                var newWorld = new World();
-                newWorld.livingCells = this.livingCells;
+
                 var dyingCells = new List<Cell>();
                 var deadLocations = new HashSet<Location>();
 
@@ -136,10 +138,12 @@ namespace GameOfLife
                 }
                 
                 var cellsToBeRessurected = CellsToComeAlive(deadLocations);
-                
-                newWorld.livingCells.RemoveAll(cell => dyingCells.Contains(cell));
-                newWorld.livingCells.AddRange(cellsToBeRessurected);
 
+                var newWorld = new World();
+                List<Cell> nextWorldCells= new List<Cell>(this.livingCells);
+                nextWorldCells.RemoveAll(cell => dyingCells.Contains(cell));
+                nextWorldCells.AddRange(cellsToBeRessurected);
+                newWorld.livingCells = nextWorldCells;
                 return newWorld;
             }
         }
