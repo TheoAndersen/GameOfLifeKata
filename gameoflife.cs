@@ -9,6 +9,7 @@ namespace GameOfLife
     {
         public class Location
         {
+    
             public int X { get; private set; }
             public int Y { get; private set; }
             
@@ -26,6 +27,33 @@ namespace GameOfLife
                                    this.Y <= l.Location.Y+1 &&
                                    !(this.X == l.Location.X &&
                                      this.Y == l.Location.Y));
+            }
+
+            public IEnumerable<Location> NeighbouringLocations()
+            {
+                return new List<Location>()
+                {
+                    new Location(X-1, Y),
+                    new Location(X-1, Y-1),
+                    new Location(X-1, Y+1),
+                    new Location(X, Y-1),
+                    new Location(X, Y+1),
+                    new Location(X+1, Y-1),
+                    new Location(X+1, Y),
+                    new Location(X+1, Y+1)
+                        };
+            }
+
+            
+            public override bool Equals(object obj)
+            {
+                var location = (Location)obj;
+                return location.X == this.X && location.Y == this.Y;
+            }
+
+            public override int GetHashCode()
+            {
+                return X ^ Y;
             }
         }
 
@@ -66,38 +94,82 @@ namespace GameOfLife
             
             public Cell GetCellAt(Location location)
             {
-                if(livingCells.Count == 0)
+                if(livingCells.Exists(cell => cell.Location.Equals(location)))
                 {
-                    return new DeadCell(location);
+                    return new AliveCell(location);
                 }
 
-                return new AliveCell(location);
+                return new DeadCell(location);
             }
 
             public void Tick()
             {
-                List<Cell> dyingCells = new List<Cell>();
+                var dyingCells = new List<Cell>();
+                var deadLocations = new List<Location>();
+                var cellsToBeRessurected = new List<AliveCell>();
 
                 foreach(var livingCell in livingCells)
                 {
-                    if(livingCell.Location.ReturnNeighbours(this.livingCells).Count() != 2)
+                    int neighbours = livingCell.Location.ReturnNeighbours(this.livingCells).Count();
+                    
+                    if(neighbours < 2 || neighbours > 3)
                     {
                         dyingCells.Add(livingCell);
+                    }
+
+                    deadLocations.AddRange(livingCell.Location.NeighbouringLocations());
+                }
+                
+
+                
+                foreach(Location deadLocation in deadLocations)
+                {
+                    if(deadLocation.ReturnNeighbours(livingCells).Count() == 3)
+                    {
+                        cellsToBeRessurected.Add(new AliveCell(deadLocation));
                     }
                 }
                 
                 livingCells.RemoveAll(cell => dyingCells.Contains(cell));
+                livingCells.AddRange(cellsToBeRessurected);
             }
+        }
+
+        [Test]
+        public void LocationReturnsAllPossibleNeighbours()
+        {
+            var neighbouringLocations = new Location(1, 1).NeighbouringLocations();
+            Assert.AreEqual(8, neighbouringLocations.Count(), "count");
+        }
+        
+        [Test]
+        public void DeadCellWithExactlyThreeLivingNeighboursBecomesALiveCellAfterATick()
+        {
+            var world = new World();
+            world.SetLiveCellAt(new Location(1, 0));   //  -x-   
+            world.SetLiveCellAt(new Location(0, 1));   //  xo-
+            world.SetLiveCellAt(new Location(1, 2));   //  -x-
+            world.Tick();
+            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
+        }
+
+        [Test]
+        public void GetCellAtShouldOnlyReturnLivingCellsWhenSet()
+        {
+            var world = new World();
+            world.SetLiveCellAt(new Location(99, 99));
+            Assert.IsInstanceOfType(typeof(DeadCell), world.GetCellAt(new Location(1, 1)));
+            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(99, 99)));
         }
 
         [Test]
         public void CellWithThreeNeighboursShouldLiveOnAfterNextTick()
         {
             var world = new World();
-            world.SetLiveCellAt(new Location(1, 1));
-            world.SetLiveCellAt(new Location(1, 2));
-            world.SetLiveCellAt(new Location(2, 1));
-            world.SetLiveCellAt(new Location(1, 0));
+            world.SetLiveCellAt(new Location(1, 0));   
+            world.SetLiveCellAt(new Location(1, 1));   //  ---   
+            world.SetLiveCellAt(new Location(1, 2));   //  xcx
+            world.SetLiveCellAt(new Location(2, 1));   //  -x-
             world.Tick();
             Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
         }
