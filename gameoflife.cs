@@ -18,19 +18,14 @@ namespace GameOfLife
                 this.Y = y;
             }
 
-            private bool IsNeighbourTo(Location location)
-            {
-                return this.X >= location.X-1 &&
-                       this.X <= location.X+1 &&
-                       this.Y >= location.Y-1 &&
-                       this.Y <= location.Y+1 &&
-                       !(this.X == location.X &&
-                         this.Y == location.Y);
-            }
-
             public IEnumerable<Cell> ReturnNeighbours(IEnumerable<Cell> cells)
             {
-                return cells.Where(c => c.Location.IsNeighbourTo(this));
+                return cells.Where(l => this.X >= l.Location.X-1 &&
+                                   this.X <= l.Location.X+1 &&
+                                   this.Y >= l.Location.Y-1 &&
+                                   this.Y <= l.Location.Y+1 &&
+                                   !(this.X == l.Location.X &&
+                                     this.Y == l.Location.Y));
             }
         }
 
@@ -86,8 +81,6 @@ namespace GameOfLife
 
             public int NeighboursOfCellAt(Location location)
             {
-                int numberOfNeighbours = 0;
-                
                 var neighbours = location.ReturnNeighbours(this.livingCells);
 
                 return neighbours.Count();
