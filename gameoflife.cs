@@ -102,9 +102,18 @@ namespace GameOfLife
                 return new DeadCell(location);
             }
 
-            IEnumerable<AliveCell> CellsToComeAlive(HashSet<Location> deadLocations)
+            private IEnumerable<AliveCell> CellsToComeAlive()
             {
                 var cellsToBeRessurected = new List<AliveCell>();
+                var deadLocations = new HashSet<Location>();
+
+                foreach(Cell livingCell in livingCells)
+                {
+                    foreach(Location neighbour in livingCell.Location.NeighbouringLocations())
+                    {
+                        deadLocations.Add(neighbour);
+                    }
+                }
                 
                 foreach (Location deadLocation in deadLocations)
                 {
@@ -116,35 +125,31 @@ namespace GameOfLife
                 return cellsToBeRessurected;
             }
             
-            public World Tick()
+            private List<Cell> CellsToDie()
             {
-
                 var dyingCells = new List<Cell>();
-                var deadLocations = new HashSet<Location>();
-
-                foreach(var livingCell in livingCells)
+                foreach (var livingCell in livingCells)
                 {
                     int neighbours = livingCell.Location.ReturnNeighboursOf(this.livingCells).Count();
-                    
-                    if(neighbours < 2 || neighbours > 3)
+                    if (neighbours < 2 || neighbours > 3)
                     {
                         dyingCells.Add(livingCell);
                     }
-
-                    foreach(Location neighbour in livingCell.Location.NeighbouringLocations())
-                    {
-                        deadLocations.Add(neighbour);
-                    }
                 }
-                
-                var cellsToBeRessurected = CellsToComeAlive(deadLocations);
-
-                var newWorld = new World();
-                List<Cell> nextWorldCells= new List<Cell>(this.livingCells);
+                return dyingCells;
+            }
+            
+            public World Tick()
+            {
+                var nextWorldCells= new List<Cell>(this.livingCells);
+                var dyingCells = CellsToDie();
                 nextWorldCells.RemoveAll(cell => dyingCells.Contains(cell));
-                nextWorldCells.AddRange(cellsToBeRessurected);
-                newWorld.livingCells = nextWorldCells;
-                return newWorld;
+                nextWorldCells.AddRange(CellsToComeAlive());
+                
+                return new World()
+                {
+                    livingCells = nextWorldCells
+                };
             }
         }
 
