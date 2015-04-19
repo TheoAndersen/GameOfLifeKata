@@ -113,8 +113,10 @@ namespace GameOfLife
                 return cellsToBeRessurected;
             }
             
-            public void Tick()
+            public World Tick()
             {
+                var newWorld = new World();
+                newWorld.livingCells = this.livingCells;
                 var dyingCells = new List<Cell>();
                 var deadLocations = new HashSet<Location>();
 
@@ -135,8 +137,10 @@ namespace GameOfLife
                 
                 var cellsToBeRessurected = CellsToComeAlive(deadLocations);
                 
-                livingCells.RemoveAll(cell => dyingCells.Contains(cell));
-                livingCells.AddRange(cellsToBeRessurected);
+                newWorld.livingCells.RemoveAll(cell => dyingCells.Contains(cell));
+                newWorld.livingCells.AddRange(cellsToBeRessurected);
+
+                return newWorld;
             }
         }
 
@@ -154,8 +158,8 @@ namespace GameOfLife
             world.SetLiveCellAt(new Location(1, 0));   //  -x-   
             world.SetLiveCellAt(new Location(0, 1));   //  xo-
             world.SetLiveCellAt(new Location(1, 2));   //  -x-
-            world.Tick();
-            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
+            World nextWorld = world.Tick();
+            Assert.IsInstanceOfType(typeof(AliveCell), nextWorld.GetCellAt(new Location(1, 1)));
         }
 
         [Test]
@@ -175,8 +179,8 @@ namespace GameOfLife
             world.SetLiveCellAt(new Location(1, 1));   //  ---   
             world.SetLiveCellAt(new Location(1, 2));   //  xcx
             world.SetLiveCellAt(new Location(2, 1));   //  -x-
-            world.Tick();
-            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
+            World nextWorld = world.Tick();
+            Assert.IsInstanceOfType(typeof(AliveCell), nextWorld.GetCellAt(new Location(1, 1)));
         }
         
         [Test]
@@ -186,8 +190,8 @@ namespace GameOfLife
             world.SetLiveCellAt(new Location(1, 1));
             world.SetLiveCellAt(new Location(1, 2));
             world.SetLiveCellAt(new Location(2, 1));
-            world.Tick();
-            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
+            World nextWorld = world.Tick();
+            Assert.IsInstanceOfType(typeof(AliveCell), nextWorld.GetCellAt(new Location(1, 1)));
         }
 
         [Test]
@@ -196,8 +200,8 @@ namespace GameOfLife
             var world = new World();
             world.SetLiveCellAt(new Location(1, 1));
             world.SetLiveCellAt(new Location(1, 2));
-            world.Tick();
-            Assert.IsInstanceOfType(typeof(DeadCell), world.GetCellAt(new Location(1, 2)));
+            World nextWorld = world.Tick();
+            Assert.IsInstanceOfType(typeof(DeadCell), nextWorld.GetCellAt(new Location(1, 2)));
         }
         
         [Test]
@@ -206,8 +210,10 @@ namespace GameOfLife
             var world = new World();
             world.SetLiveCellAt(new Location(1,1));
             Assert.IsAssignableFrom(typeof(AliveCell), world.GetCellAt(new Location(1, 1)), "before tick");
-            world.Tick();
-            Assert.IsInstanceOfType(typeof(DeadCell), world.GetCellAt(new Location(1, 1)), "after tick");
+            World nextWorld = world.Tick();
+            Assert.IsInstanceOfType(typeof(DeadCell), nextWorld.GetCellAt(new Location(1, 1)), "after tick");
         }
     }
 }
+
+
