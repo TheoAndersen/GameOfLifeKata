@@ -9,7 +9,6 @@ namespace GameOfLife
     {
         public class Location
         {
-    
             public int X { get; private set; }
             public int Y { get; private set; }
             
@@ -19,14 +18,13 @@ namespace GameOfLife
                 this.Y = y;
             }
 
-            public IEnumerable<Cell> ReturnNeighbours(IEnumerable<Cell> cells)
+            public IEnumerable<Cell> ReturnNeighboursOf(IEnumerable<Cell> cells)
             {
                 return cells.Where(l => this.X >= l.Location.X-1 &&
                                    this.X <= l.Location.X+1 &&
                                    this.Y >= l.Location.Y-1 &&
                                    this.Y <= l.Location.Y+1 &&
-                                   !(this.X == l.Location.X &&
-                                     this.Y == l.Location.Y));
+                                   !this.Equals(l.Location));
             }
 
             public IEnumerable<Location> NeighbouringLocations()
@@ -41,9 +39,8 @@ namespace GameOfLife
                     new Location(X+1, Y-1),
                     new Location(X+1, Y),
                     new Location(X+1, Y+1)
-                        };
+                };
             }
-
             
             public override bool Equals(object obj)
             {
@@ -102,33 +99,41 @@ namespace GameOfLife
                 return new DeadCell(location);
             }
 
+            IEnumerable<AliveCell> CellsToComeAlive(HashSet<Location> deadLocations)
+            {
+                var cellsToBeRessurected = new List<AliveCell>();
+                
+                foreach (Location deadLocation in deadLocations)
+                {
+                    if (deadLocation.ReturnNeighboursOf(livingCells).Count() == 3)
+                    {
+                        cellsToBeRessurected.Add(new AliveCell(deadLocation));
+                    }
+                }
+                return cellsToBeRessurected;
+            }
+            
             public void Tick()
             {
                 var dyingCells = new List<Cell>();
-                var deadLocations = new List<Location>();
-                var cellsToBeRessurected = new List<AliveCell>();
+                var deadLocations = new HashSet<Location>();
 
                 foreach(var livingCell in livingCells)
                 {
-                    int neighbours = livingCell.Location.ReturnNeighbours(this.livingCells).Count();
+                    int neighbours = livingCell.Location.ReturnNeighboursOf(this.livingCells).Count();
                     
                     if(neighbours < 2 || neighbours > 3)
                     {
                         dyingCells.Add(livingCell);
                     }
 
-                    deadLocations.AddRange(livingCell.Location.NeighbouringLocations());
-                }
-                
-
-                
-                foreach(Location deadLocation in deadLocations)
-                {
-                    if(deadLocation.ReturnNeighbours(livingCells).Count() == 3)
+                    foreach(Location neighbour in livingCell.Location.NeighbouringLocations())
                     {
-                        cellsToBeRessurected.Add(new AliveCell(deadLocation));
+                        deadLocations.Add(neighbour);
                     }
                 }
+                
+                var cellsToBeRessurected = CellsToComeAlive(deadLocations);
                 
                 livingCells.RemoveAll(cell => dyingCells.Contains(cell));
                 livingCells.AddRange(cellsToBeRessurected);
