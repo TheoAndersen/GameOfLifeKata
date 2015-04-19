@@ -80,7 +80,7 @@ namespace GameOfLife
 
                 foreach(var livingCell in livingCells)
                 {
-                    if(NeighboursOfCellAt(livingCell.Location) != 2)
+                    if(livingCell.Location.ReturnNeighbours(this.livingCells).Count() != 2)
                     {
                         dyingCells.Add(livingCell);
                     }
@@ -88,14 +88,20 @@ namespace GameOfLife
                 
                 livingCells.RemoveAll(cell => dyingCells.Contains(cell));
             }
-
-            public int NeighboursOfCellAt(Location location)
-            {
-                var neighbours = location.ReturnNeighbours(this.livingCells);
-
-                return neighbours.Count();
-            }
         }
+
+        [Test]
+        public void CellWithThreeNeighboursShouldLiveOnAfterNextTick()
+        {
+            var world = new World();
+            world.SetLiveCellAt(new Location(1, 1));
+            world.SetLiveCellAt(new Location(1, 2));
+            world.SetLiveCellAt(new Location(2, 1));
+            world.SetLiveCellAt(new Location(1, 0));
+            world.Tick();
+            Assert.IsInstanceOfType(typeof(AliveCell), world.GetCellAt(new Location(1, 1)));
+        }
+        
         [Test]
         public void CellWithTwoNeighboursShouldLiveOnAfterNextTick()
         {
@@ -108,50 +114,14 @@ namespace GameOfLife
         }
 
         [Test]
-        public void ShouldBeAbleToFindNumberOfNeighboursOfACell()
+        public void CellWithOneNeighbourDiesAfterATick()
         {
-            /*     0 1 2 3 4
-             *     
-             *  0  x x x x x
-                1  x n n n x
-             *  2  x n c n x
-             *  3  x n n n x
-             *  4  x x x x x
-             */
-
             var world = new World();
-            var location = new Location(2, 2);
-            Assert.AreEqual(0, world.NeighboursOfCellAt(location));
-            world.SetLiveCellAt(new Location(2, 2));
-            Assert.AreEqual(0, world.NeighboursOfCellAt(location));
-            world.SetLiveCellAt(new Location(0, 0));
-            world.SetLiveCellAt(new Location(0, 1));
-            world.SetLiveCellAt(new Location(0, 2));
-            world.SetLiveCellAt(new Location(0, 3));
-            world.SetLiveCellAt(new Location(0, 4));
-            world.SetLiveCellAt(new Location(1, 0));
-            world.SetLiveCellAt(new Location(1, 4));
-            world.SetLiveCellAt(new Location(2, 0));
-            world.SetLiveCellAt(new Location(2, 4));
-            world.SetLiveCellAt(new Location(3, 0));
-            world.SetLiveCellAt(new Location(3, 4));
-            world.SetLiveCellAt(new Location(4, 0));
-            world.SetLiveCellAt(new Location(4, 1));
-            world.SetLiveCellAt(new Location(4, 2));
-            world.SetLiveCellAt(new Location(4, 3));
-            world.SetLiveCellAt(new Location(4, 4));
-            Assert.AreEqual(0, world.NeighboursOfCellAt(location));
             world.SetLiveCellAt(new Location(1, 1));
             world.SetLiveCellAt(new Location(1, 2));
-            world.SetLiveCellAt(new Location(1, 3));
-            world.SetLiveCellAt(new Location(2, 1));
-            world.SetLiveCellAt(new Location(2, 3));
-            world.SetLiveCellAt(new Location(3, 1));
-            world.SetLiveCellAt(new Location(3, 2));
-            world.SetLiveCellAt(new Location(3, 3));
-            Assert.AreEqual(8, world.NeighboursOfCellAt(location));
+            world.Tick();
+            Assert.IsInstanceOfType(typeof(DeadCell), world.GetCellAt(new Location(1, 2)));
         }
-        
         
         [Test]
         public void OneAliveCellShouldDieAfterATick()
